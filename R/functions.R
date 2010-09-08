@@ -4,7 +4,7 @@
 # Author: Dr. T. Ian Simpson
 # Affiliation : University of Edinburgh
 # E-mail : ian.simpson@ed.ac.uk
-# Version : 0.3
+# Version : 0.5
 #
 ###############################################################################
 
@@ -12,23 +12,23 @@
 library(cluster)
 
 #check data integrity
-data_check<-function(dat){
+data_check<-function(x){
 	#is it a data.frame
-	if(is.data.frame(dat)!=1){stop('x is not a data frame')}
+	if(is.data.frame(x)!=1){stop('x is not a data frame')}
 	#row.names
-	if(length(row.names(dat))<1){stop('x has no row names defined')}
+	if(length(row.names(x))<1){stop('x has no row names defined')}
 	#col.names
-	if(length(names(dat))<=0){stop('x has no column names defined')}
+	if(length(names(x))<=0){stop('x has no column names defined')}
 	#values as numeric (as you cannot have mixed class checking 1 column is sufficient)
-	if(!is.numeric(dat[,1])){stop('x is not numeric')}
+	if(!is.numeric(x[,1])){stop('x is not numeric')}
 	#check for missing values
-	if(sum(is.na(dat))!=0){stop('x contains missing values')}
-	return(1);
+	if(sum(is.na(x))!=0){stop('x contains missing values')}
+	return(TRUE);
 }
 
 #Basic S4 class to carry the consensus matrices and their full clustering result
 #where cm = consensus matrix, rm = reference matrix (full clustering result), a = algorithm and k = cluster number
-setClass("consmatrix",representation(cm="matrix",rm="data.frame",a="character",k="numeric"))
+setClass("consmatrix",representation(cm="matrix",rm="data.frame",a="character",k="numeric",call="call"))
 #define a validity checking function
 validConsMatrixObject <- function(object){
 	if(length(object@cm)>0 & length(object@rm)>0 & length(object@a)>0 & length(object@k)>0) TRUE
@@ -39,7 +39,7 @@ setValidity("consmatrix",validConsMatrixObject)
 setClass("mergematrix",representation(cm="matrix",k="numeric",a="character"))
 validMergeMatrixObject <- function(object){
 	if(length(object@cm)>0 & length(object@k)>0 & length(object@a)>0 ) TRUE
-	else{paste('One of the ewquired variables has zero length')}
+	else{paste('One of the required variables has zero length')}
 }
 setValidity("mergematrix",validMergeMatrixObject)
 
@@ -57,11 +57,34 @@ validMemRobMatrixObject <- function(object){
 }
 setValidity("memrobmatrix",validMemRobMatrixObject)
 
+#New additions class objects for aucs and deltak plot data, simple inheritance objects
+#define a class aucs
+setClass("auc",contains=c('data.frame'));
+#define a validity checking function
+validAUCObject <- function(object){
+	if(class(object)!='auc'){stop('The object is not a valid AUC object')}
+	else{return(TRUE)};
+}
+setValidity("auc",validAUCObject)
+
+#define a class dk
+setClass("dk",contains=c('data.frame'));
+#define a validity checking function
+validDkObject <- function(object){
+	if(class(object)!='dk'){stop('The object is not a valid dk object')}
+	else{return(TRUE)};
+}
+setValidity("dk",validDkObject)
+
+#TODO probably should put class validation methods in here
+
 #perform the re-sampling
-cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),clmin=2,clmax=10,prop=0.8,reps=50,merge=1){
+cluscomp<-function(x,diss=FALSE,algorithms=list('kmeans'),alparams=list(),alweights=list(),clmin=2,clmax=10,prop=0.8,reps=50,merge=0){
 	#CHECK INPUTS
 	#check integrity of data (what about NAs)
-	if(data_check(x)!=1){stop('x fails the data integrity check')}
+	if(data_check(x)!=TRUE){stop('the provided data fails the data integrity check')}
+	#check that the algorithms are passed as a list
+	if(class(algorithms)!='list'){stop('You must pass the algorithm names in a list')};
 	#check that all of the algorithms specified are available
 	for(i in 1:length(algorithms)){
 		if(existsFunction(algorithms[[i]])!=1){stop('One or more of the specified algorithms does not exist')} else {}
@@ -78,7 +101,7 @@ cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),
 	#clmin,clmax,reps integers
 	if(clmin < 2){stop('cannot have less than two clusters')}
 	#prop between 0 and 1
-	if(prop <= 0 | prop >=1){stop('resampling proportion must be greater than 0 and less than 1')}
+	if(prop <= 0 | prop >1){stop('resampling proportion must be greater than 0 and less than 1')}
 	#check merge
 	if(merge != 0 & merge !=1){stop('merge can only be 0 or 1')}
 	#normalise algorithm weightings
@@ -87,13 +110,12 @@ cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),
 	#if we get past all this now call the re-sampling
 	sample_number = dim(x)[1];
 	
-	
 	#list to hold all of the consmatrix objects
 	cmlist <- list();
 	
 	for(clnum in clmin:clmax)
 	{
-		print(paste('cluster number set to ',clnum),quote=FALSE);
+		print(paste('cluster number k=',clnum),quote=FALSE);
 
 		#if merging create a matrix to hold the merge
 		if(merge>0){
@@ -103,7 +125,7 @@ cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),
 
 		#for each algorithm
 		for(a in 1:length(algorithms)){
-			print(paste('resampling for algorithm',algorithms[[a]]),quote=FALSE);
+			print(paste('running experiment',a,'algorithm:',algorithms[[a]],sep=' '),quote=FALSE);
 			#be aware this connectivity matrix is N^2 so don't try to cluster with 10'000s of genes
 			final_conn <- matrix(0,nrow=dim(x)[1],ncol=dim(x)[1],dimnames=list(row.names(x),row.names(x)));
 			final_id <- final_conn;
@@ -115,14 +137,41 @@ cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),
 			#check if params have been specified
 			if(length(alparams)!=0){
 				current_params <- alparams[[a]];
+				#check if the diss parameter is set and true, in case user forgets diss flag
+				if(!is.null(current_params$diss)){
+					diss=TRUE;
+				}
 			}
 			else{
-				current_params = list();
+				#here someone has specified that x is a distance matrix, but not included it in the params
+				if(diss==TRUE){
+					current_params = list(diss=TRUE);
+				}
+				#otherwise x not a distance matrix params stay empty
+				else{
+					current_params = list();
+				}
 			}
 			for(i in 1:reps){
 				#the generic clustering algorithm calling method
-				samp_x <- x[sample(row.names(x),as.integer(prop*sample_number)),]
-				clmem <- current_algo(samp_x,clnum,params=current_params)			
+				#checking if data is in fact a distance matrix (data.frame)
+				#either by flag diss being set or diss being set in parameters
+				if (diss==TRUE){
+					#we have already put the object through the data_check
+					#we need to check that the row and column names are the same in the distance data.frame
+					if(unique(names(x)==row.names(x))==FALSE){stop('the row and column names of the distance matrix are not the same or the distance matrix is not square !')}
+					#if OK perform the sample
+					else{
+							samp_row_names <- sample(row.names(x),as.integer(prop*sample_number));
+							samp_x <- x[samp_row_names,samp_row_names];
+							#convert to object of class 'dissimilarity'
+							samp_x <- as.dist(samp_x);
+					}
+				}
+				else{
+					samp_x <- x[sample(row.names(x),as.integer(prop*sample_number)),]; #ORIGINAL
+				}
+				clmem <- current_algo(samp_x,clnum,params=current_params);
 				#cl_reps[row.names(clmem),i] <- clmem$cm # to store implictly the cluster membership results
 				#now we can grow the connectivity matrix on the fly by iteration
 				#create a current instance of the zeroes indexed array (without pseudocount)
@@ -157,12 +206,12 @@ cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),
 			#check for NAs (this is safer than pseudo counting, replace NAs with 0 i.e. they are never drawn together and/or never connected)
 			ind <- is.na(consensus)
 			consensus[ind] <- 0
-			#perform the full clusetering as reference
+			#perform the full clustering as reference
 			rm <- current_algo(x,clnum,params=current_params)
 			#now create the S4 class
-			current_consmatrix <- new('consmatrix',cm=consensus,rm=rm,a=algorithms[[a]],k=clnum);
+			current_consmatrix <- new('consmatrix',cm=consensus,rm=rm,a=algorithms[[a]],k=clnum,call=match.call());
 			#add the consmatrix object to the list
-			cmlist[paste(algorithms[[a]],clnum,sep='_')] <- current_consmatrix
+			cmlist[paste('e',a,'_',algorithms[[a]],'_k',clnum,sep='')] <- current_consmatrix
 			#now add to the running matrix for merge weighting by the correct algorithm weighting if merge !=0
 			if(merge!=0){
 				weighted <- current_consmatrix@cm*norm[a]
@@ -171,7 +220,7 @@ cluscomp<-function(x,algorithms=list('kmeans'),alparams=list(),alweights=list(),
 		}
 		if(merge!=0){
 			mm <- new('mergematrix',cm=mm,k=clnum,a='merge')
-			cmlist[paste('merge',clnum,sep='_')] <- mm
+			cmlist[paste('merge_k',clnum,sep='')] <- mm
 		}
 	}
 	return(cmlist)
@@ -308,8 +357,8 @@ memrob <- function(x,rm=data.frame()){
 #cluster1 <- mr$cluster1@mrl
 
 #AUC - calculate the area under the curve
-auc <- function(cm){
-	n = dim(cm)[1]
+auc <- function(x){
+	n = dim(x)[1]
 	
 	m = n*(n-1)/2
 	
@@ -320,7 +369,7 @@ auc <- function(cm){
 	for (i in 1:n){
 		for(j in 1:n){
 			if(i < j){
-				xi[k] <- cm[i,j]
+				xi[k] <- x[i,j]
 				k=k+1
 			}
 		}
@@ -373,27 +422,130 @@ aucs <- function(x){
 		aucs <- c(aucs,auc(i@cm))
 	}
 	a <- data.frame(k=as.factor(k),a=as.factor(a),aucs=aucs)
+	a <- new('auc',a);
 	return(a)
 }
 
 #look at the change in the AUC by cluster number
 deltak <- function(x){
+	#check input is a valid AUC object
+	if(validAUCObject(x)==TRUE){
 	deltaks <- data.frame()
 	for(i in levels(x$a)){
-		current_aucs <- x[x$a==i,]
-		deltak <- NULL
-		k <- as.numeric(levels(current_aucs$k))
-		a <- current_aucs$a
-		for(j in 1:length(current_aucs$aucs)){
-			if(j==1){
-				deltak <- c(deltak,current_aucs$aucs[j])
-			}
-			else{
-				deltak <- c(deltak,((current_aucs$aucs[j]-current_aucs$aucs[j-1])/current_aucs$aucs[j-1]))
-			}
-		}
-		current_deltaks <- data.frame(k=as.factor(k),a=as.factor(a),deltak=deltak)
-		deltaks <- rbind(deltaks,current_deltaks)
-	}
+	     current_aucs <- x[x$a==i,]
+	     deltak <- NULL
+	     k <- as.numeric(levels(current_aucs$k))
+	     a <- current_aucs$a
+	     for(j in 1:length(current_aucs$aucs)){
+	         if(j==1){
+	             deltak <- c(deltak,current_aucs$aucs[j])
+	         }
+	         else{
+	             deltak <- c(deltak,((current_aucs$aucs[j]-current_aucs$aucs[j-1])/current_aucs$aucs[j-1]))
+	         }
+	     }
+	     current_deltaks <- data.frame(k=as.factor(k),a=as.factor(a),deltak=deltak)
+	     deltaks <- rbind(deltaks,current_deltaks);
+	 }
+	deltaks <- new('dk',deltaks);
 	return(deltaks)
+	}
+}
+
+#plotting functions
+#aucs plot
+aucplot<-function(x){
+	if(validAUCObject(x)){
+		library(RColorBrewer);
+		line_number <- length(unique(x[,2]));
+		if(line_number<3){
+			gpcols <- brewer.pal(3,'Set1');
+			gpcols <- gpcols[1:line_number];
+			lines <- c(1:line_number);
+			points <- c(1:line_number);		
+		}
+		else{
+			gpcols <- brewer.pal(line_number,'Set1');
+			lines <- c(1:line_number);
+			points <- c(1:line_number);
+		}
+		p1 <- xyplot(aucs ~ k,
+				group=x[,2],
+				x,
+				scales=list(x=list(tick.number=4)),
+				xlab = 'cluster number (k)',
+				ylab = 'AUC',
+				type=c('o'),
+				panel = function(...) {
+					panel.xyplot(...,
+							pch=points,
+							lty=lines,
+							col=gpcols
+					)
+				}
+		)
+		
+		plot(p1);
+		
+		legend <-list(
+				text=list(as.vector(unique(x[,2]))),
+				lines=list(
+						type=c('o'),
+						pch=points,
+						lty=lines,
+						col=gpcols
+				)
+		)
+		
+		draw.key(vp=viewport(0.8,0.2),legend,draw=TRUE);
+	}
+}
+
+#delta-K plot
+dkplot<-function(x){
+	if(validDkObject(x)){
+		library(RColorBrewer);
+		line_number <- length(unique(x[,2]));
+		if(line_number<3){
+			gpcols <- brewer.pal(3,'Set1');
+			gpcols <- gpcols[1:line_number];
+			lines <- c(1:line_number);
+			points <- c(1:line_number);		
+		}
+		else{
+			gpcols <- brewer.pal(line_number,'Set1');
+			lines <- c(1:line_number);
+			points <- c(1:line_number);
+		}
+
+		p1 <- xyplot(deltak ~ k,
+				group=x[,2],
+				x,
+				scales=list(x=list(tick.number=4)),
+				xlab = 'cluster number (k)',
+				ylab = 'delta-K',
+				type=c('o'),
+				panel = function(...) {
+					panel.xyplot(...,
+							pch=points,
+							lty=lines,
+							col=gpcols
+					)
+				}
+		)
+		
+		plot(p1);
+		
+		legend <-list(
+				text=list(as.vector(unique(x[,2]))),
+				lines=list(
+						type=c('o'),
+						pch=points,
+						lty=lines,
+						col=gpcols
+				)
+		)
+		
+		draw.key(vp=viewport(0.8,0.2),legend,draw=TRUE);
+	}
 }

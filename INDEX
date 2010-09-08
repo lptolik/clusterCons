@@ -1,0 +1,42 @@
+Main functions
+
+cluscomp - generate consensus matrices from re-sampled clustering experiments with the option of multiple algorithms and parameters
+clrob - calculate the robustness of the clusters from the consensus matrix
+memrob - calculate the cluster membership robustness from the consensus matrix
+
+Algorithms - Internal functions to call the individual clustering algorithms
+
+agnes_clmem - wrapper for the agnes function of package cluster
+diana_clmem - wrapper for the diana function of package cluster
+hclust_clmem - wrapper for the hclust function of package cluster
+kmeans_clmem - wrapper for the kmeans function of package cluster
+pam_clmem - wrapper for the pam function of package cluster
+
+Analysis curves - Functions to calculate AUC related metrics
+
+auc - calculates the area under the curve for a series of clustering experiments with the same cluster number
+aucs - calculates the areas under the curves of a series of clustering experiments over a range of cluster numbers
+deltak - calculates the change in the area under the curve
+
+
+Plotting - plotting methods
+ 
+aucplot - plot the areas under the curves from an AUC object (typically produced by the aucs() function)
+dkplot - plot the delta-K curve to estimate the optimal cluster number (k) from a dk object (typically produced by the deltak() function)
+
+
+Data checking and class definition - Functions to check data and object validity
+
+data_check - check that the provided data.frame is formatted correctly
+validConsMatrixObject - check the validity of a consmatrix object
+validMergeMatrixObject - check the validity of a mergematrix object
+validMemRobListObject - check the validity of a membership robustness list object
+validMemRobMatrixObject - check the validity of a membership robustness matrix object
+validAUCObject - check the validity of an AUC calculation object
+validDkObject - check the validity of a delta-K calculation object
+
+Data - provided data sets
+golub - leukemia microarray datasets for AML and ALL patients       
+sim_class - simulated gene expression data for classes
+sim_profile - simlulated gene expression profiles
+testcmr - an example cluscomp result to test out downstream functionality

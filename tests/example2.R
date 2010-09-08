@@ -8,18 +8,22 @@
 # Example script number 2 - more advanced use with data from Golub et al. 1999
 ###############################################################################
 
+#perform some test analyses using clusterCons
+library(clusterCons);
+
+#load in some real gene expression data
 data('golub');
 
 #call the cluscomp method
-cmr <- cluscomp(data.frame(t(golub)),algorithms=c('kmeans','pam'),merge=0,clmin=2,clmax=5,reps=100)
+cmr <- cluscomp(data.frame(t(golub)),algorithms=list('kmeans','pam'),merge=0,clmin=2,clmax=5,reps=10)
 
 #exploring the cmr
 summary(cmr);
-summary(cmr$kmeans_3);
+summary(cmr$e1_kmeans_k3);
 getClass('consmatrix');
 
 #lets look at a heat map
-cm <- cmr$kmeans_3;
+cm <- cmr$e1_kmeans_k3;
 heatmap(cm@cm);
 
 #get cluster robustness
@@ -39,25 +43,10 @@ mr$cluster1;
 ac <- aucs(cmr)
 
 #plot out the auc curves
-library(lattice);
-library(grid);
-
-xyplot(aucs~k,groups=a,ac,auto.key=T,xlab='cluster',ylab='AUC',type='b')
+aucplot(ac)
 
 #now lets calculate the deltak
 dk <- deltak(ac)
 
 #plot out the results to find optimal class number
-x11()
-xyplot(deltak~k,groups=a,dk,type='b',auto.key=T)
-#now plot out a bit more elegantly
-x11()
-grp=c('red','green')
-title=list(label='Change in A(K) by cluster number with two different clustering algorithms',cex=0.8)
-legend <-list(title='algorithm',cex.title=1,text=list(levels(dk$a)),cex=0.8,lines=list(col=grp,type=c('b'),pch=1))
-details <- list(title='conditions',cex.title=1,text=list(c("iterations = 100","resampling freq. = 0.8")),cex=0.8)
-ylab = expression({Delta*K})
-xyplot(deltak~k,groups=a,dk,col=grp,type=c('l','p'),main=title,scales=list( x=list( at = c(1:4))),xlab='cluster number',ylab=ylab)
-draw.key(vp=viewport(0.8,0.8),legend,draw=T)
-draw.key(vp=viewport(0.8,0.6),details,draw=T)
-
+dkplot(dk)

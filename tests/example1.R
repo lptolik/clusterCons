@@ -17,7 +17,7 @@ library(clusterCons);
 data('sim_profile');
 
 #perform the re-sampling with five different algorithms
-cmr <- cluscomp(sim_profile,algorithms=c('kmeans','pam','agnes','hclust','diana'),merge=0,clmin=2,clmax=6,reps=10);
+cmr <- cluscomp(sim_profile,algorithms=list('kmeans','pam','agnes'),merge=0,clmin=2,clmax=6,reps=5);
 
 #show the result list
 summary(cmr);
@@ -37,7 +37,7 @@ for(i in 1:length(cmr)){
 }
 
 #when k=4 and algo is kmeans find the membership robustness values
-mr <- memrob(cmr$kmeans_4);
+mr <- memrob(cmr$e3_agnes_k4);
 
 #show what this object holds
 summary(mr);
@@ -52,7 +52,7 @@ mr$resultmatrix;
 data('sim_class');
 
 #perform the re-sampling with (note the transpose of the data matrix as we want to cluster by class not gene) 
-cmr2 <- cluscomp(data.frame(t(sim_class)),algorithms=c('kmeans','pam','agnes'),merge=0,clmin=2,clmax=6,reps=20);
+cmr2 <- cluscomp(data.frame(t(sim_class)),algorithms=list('kmeans','pam','agnes'),merge=0,clmin=2,clmax=6,reps=20);
 
 #show the result list
 summary(cmr2);
@@ -72,7 +72,7 @@ for(i in 1:length(cmr2)){
 }
 
 #when k=4 and algo is kmeans find the membership robustness values
-mr2 <- memrob(cmr2$kmeans_3);
+mr2 <- memrob(cmr2$e1_kmeans_k3);
 
 #show what this object holds
 summary(mr2);
@@ -88,16 +88,16 @@ mr2$resultmatrix;
 #calculating area under curve (AUC)
 
 #we can calculate the AUC for individual consensus matrices (note you must pass the consensus matrix itself @cm)
-aci <- auc(cmr$kmeans_5@cm);
+aci <- auc(cmr$e3_agnes_k5@cm);
 
 #or for the entire result set to assess performance over clusters between algorithms and/or experimental conditions
 ac <-aucs(cmr);
 
+#basic AUC plot
+aucplot(ac);
+
 #we can also calculate the change in AUC by cluster number, deltak
 dk <- deltak(ac);
 
-#we can then visualise the relative performance of each clustering experiment
-library(lattice);
-
-#basic plot
-xyplot(deltak~k,group=a,dk,type='b',auto.key=list(space='right'));
+#basic delta-K plot
+dkplot(dk);

@@ -4,7 +4,7 @@
 # Author: Dr. T. Ian Simpson
 # Affiliation : University of Edinburgh
 # E-mail : ian.simpson@ed.ac.uk
-# Version : 0.3
+# Version : 0.4
 ###############################################################################
 #The following clustering algorithms from cluster are specified here :-
 #		agnes  - agglomerative hierarchical clustering
@@ -65,17 +65,16 @@ pam_clmem <- function(x,clnum,params=list()){
 
 #kmeans
 kmeans_clmem <- function(x,clnum,params=list()){
-	#need to check whether a center call is made in params if it is needs to be corrected to current clnum
+	#if someone has tried to pass a distance matrix remove the diss param and allow through (it inheritently checks)
 	if(length(params)==0){
-#		params <- list(centers=clnum);
 		params <- list(centers=clnum,nstart=10);
 	}
 	else{
-		#check whether centers has been set. If it has then it should be replaced with clnum
-		#it checks the list with regexpr checks if any are equal to 1 (T/F) return then sums the logicals
-		if(sum(regexpr('^centers$',names(params))==1)>=1){
-			params$centers=clnum
+		if(sum(names(params) %in% 'diss')>=1){
+			params$diss=NULL;
 		}
+		#set the centers number to the current clnum # overrides user spec if in conflict
+		params$centers=clnum;
 	}
 	params$x <- x;
 	clmem <- data.frame(do.call(kmeans,params)$cluster);
@@ -90,25 +89,17 @@ kmeans_clmem <- function(x,clnum,params=list()){
 
 #hclust
 hclust_clmem <- function(x,clnum,params=list()){
-	#check if params have been passed if not set up the default
-	if(length(params)!=0){
-		#the data is not a dissimilarity matrix allow new param for this calling function named diss
-		#check whether diss has been set, if so generate distance matrix
-		#it checks the list with regexpr checks if any are equal to 1 (T/F) return then sums the logicals
-		if(sum(regexpr('^diss$',names(params))==1)>=1){
-			dm <-dist(x,method=params$diss)
-			#drop the parameter from the list
-			params$diss <-NULL;
-		}
-		else{
-			#if not default euclidean
-			dm <- dist(x);
-		}
-		params$d <- dm;
+	#remove any erroneous diss parameters, hclust only takes 'dist' objects
+	params$diss=NULL;
+	#if the data is not a dissimilarity already make one. The user should not use hclust without providing the
+	#distance matrix as it only takes distance matrices.
+	if(class(x)!='dist'){
+		dm <- dist(x);
+		params$d=dm;
 	}
 	else{
-		dm <- dist(x);
-		params <- list(d=dm);
+		dm <- x;
+		params$d=dm;
 	}
 	#perform the clustering
 	hc <- do.call(hclust,params)

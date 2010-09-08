@@ -13,13 +13,13 @@ select several algorithms to use in the re-sampling scheme and with any of the p
 \tabular{ll}{
 Package: \tab clusterCons\cr
 Type: \tab Package\cr
-Version: \tab 0.4\cr
-Date: \tab 2010-03-09\cr
+Version: \tab 0.5\cr
+Date: \tab 2010-08-19\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
-Depends: \tab methods,cluster\cr
+Depends: \tab methods,cluster,lattice,RColorBrewer,grid\cr
 Extends: \tab cluster\cr
-Suggests: \tab lattice\cr
+Suggests: \tab latticeExtra\cr
 }
 
 The user should first prepare an entirely numeric \code{data.frame} in which the conditions to be clustered are the column names and the unique ids
@@ -53,21 +53,26 @@ of the entities are the row names. Compatibility of the resulting data.fram can 
 \code{validMergeMatrixObject} - check the validity of a \code{mergematrix} object\cr
 \code{validMemRobListObject} - check the validity of a membership robustness list object\cr
 \code{validMemRobMatrixObject} - check the validity of a membership robustness matrix object\cr
+\code{validAUCObject} - check the validity of an \code{"auc"} class object\cr
+\code{validDkObject} - check the validity of an \code{"dk"} class object\cr
 }
 
-\section{Author}{
-Ian Simpson
+%plotting
+\section{Functions to plot out performance curves}{
+\code{aucplot} - plot area under the curve (AUC) plots from consensus clustering results\cr
+\code{dkplot} - plot change in AUC by cluster number (delta-K plot)\cr
+}
+
+\references{
+Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
+(submitted)\cr
+
+Consensus clustering: A resampling-based method for class discovery and visualization of gene expression microarray data. Monti, S., Tamayo, P., Mesirov, J. and Golub, T. Machine Learning, 52, July 2003.\cr
+}
+
+\author{
+Dr. T. Ian Simpson
 \email{ian.simpson@ed.ac.uk}
-}
-
-\section{References}{
-\cite{
-Gene and group prioritisation using a simple consensus clustering methodology in R. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(manuscript in preparation).}
-
-\cite{
-Consensus clustering: A resampling-based method for class discovery and visualization of gene expression microarray data. Monti, S., Tamayo, P., Mesirov, J. and Golub, T. Machine Learning, 52, July 2003.
-}
 }
 
 \section{Keywords}{
@@ -79,5 +84,35 @@ cluster
 }
 
 \section{Examples}{
-~~ simple examples of the most important functions ~~
+#load data
+data(sim_profile);
+
+#perform consensus clustering
+cmr <- cluscomp(sim_profile,algo=list('agnes','pam','kmeans'),clmin=2,clmax=7,rep=10,merge=1);
+
+#see the consensus and merge matrices
+summary(cmr);
+
+#fetch the cluster robustness for agnes consensus clustering with k=3
+clrob(cmr$e1_agnes_k3);
+
+#show the membership robustness for cluster 1
+memrob(cmr$e1_agnes_k3)$cluster1
+
+#show the same, but for the merge against the k=3 agnes clustering structure
+#note we provide the reference matrix (which is the original cluster membership for agnes where k=3)
+clrob(cmr$merge_k3,cmr$e1_agnes_k3@rm);
+memrob(cmr$merge_k3,cmr$e1_agnes_k3@rm)$cluster1;
+
+#calculate the AUCs
+acs <- aucs(cmr);
+
+#plot the AUC curves
+aucplot(acs);
+
+#calculate the delta-Ks
+dks <- deltak(acs);
+
+#plot the delta-K curves
+dkplot(dks);
 }
