@@ -1,10 +1,10 @@
 Package: clusterCons
 Type: Package
-Version: 0.5
+Version: 0.6
 Title: Calculate the consensus clustering result from re-sampled
         clustering experiments with the option of using multiple
         algorithms and parameter
-Date: 2010-09-08
+Date: 2010-09-26
 Author: Dr. T. Ian Simpson, University of Edinburgh
 Maintainer: Dr. T. Ian Simpson <ian.simpson@ed.ac.uk>
 Depends: methods,cluster,lattice,RColorBrewer,grid
@@ -23,6 +23,6 @@ Description: clusterCons is a package containing functions that
 License: GPL
 LazyLoad: yes
 URL: http://sourceforge.net/projects/clustercons/
-Packaged: 2010-08-25 11:30:30 UTC; isimpson
+Packaged: 2010-08-26 21:43:18 UTC; isimpson
 Repository: CRAN
-Date/Publication: 2010-08-25 12:50:36
+Date/Publication: 2010-08-27 06:23:44

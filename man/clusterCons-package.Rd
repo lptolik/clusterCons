@@ -13,8 +13,8 @@ select several algorithms to use in the re-sampling scheme and with any of the p
 \tabular{ll}{
 Package: \tab clusterCons\cr
 Type: \tab Package\cr
-Version: \tab 0.5\cr
-Date: \tab 2010-08-19\cr
+Version: \tab 0.6\cr
+Date: \tab 2010-08-26\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
 Depends: \tab methods,cluster,lattice,RColorBrewer,grid\cr

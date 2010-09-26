@@ -4,7 +4,7 @@
 # Author: Dr. T. Ian Simpson
 # Affiliation : University of Edinburgh
 # E-mail : ian.simpson@ed.ac.uk
-# Version : 0.4
+# Version : 0.6
 ###############################################################################
 #The following clustering algorithms from cluster are specified here :-
 #		agnes  - agglomerative hierarchical clustering
@@ -65,15 +65,19 @@ pam_clmem <- function(x,clnum,params=list()){
 
 #kmeans
 kmeans_clmem <- function(x,clnum,params=list()){
-	#if someone has tried to pass a distance matrix remove the diss param and allow through (it inheritently checks)
+	#remove the diss argument as kmeans doesn't take this argument
+	params$diss=NULL;
+	#set the MacQueen algorithm as default we have seen random failures with Hartigan-Wong
+	params$algorithm='Mac';
+	#if object is dist then convert back to matrix
+	if(class(x)=='dist'){
+		x <- as.matrix(x);
+	}
 	if(length(params)==0){
-		params <- list(centers=clnum,nstart=10);
+		params <- list(centers=clnum);
 	}
 	else{
-		if(sum(names(params) %in% 'diss')>=1){
-			params$diss=NULL;
-		}
-		#set the centers number to the current clnum # overrides user spec if in conflict
+		#add or override the centers number in existing params to the current clnum (resolves potential conflict)
 		params$centers=clnum;
 	}
 	params$x <- x;
