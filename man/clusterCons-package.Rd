@@ -13,11 +13,11 @@ select several algorithms to use in the re-sampling scheme and with any of the p
 \tabular{ll}{
 Package: \tab clusterCons\cr
 Type: \tab Package\cr
-Version: \tab 0.6\cr
-Date: \tab 2010-08-26\cr
+Version: \tab 1.0\cr
+Date: \tab 2010-10-12\cr
 License: \tab GPL\cr
 LazyLoad: \tab yes\cr
-Depends: \tab methods,cluster,lattice,RColorBrewer,grid\cr
+Depends: \tab methods,cluster,lattice,RColorBrewer,grid,apcluster\cr
 Extends: \tab cluster\cr
 Suggests: \tab latticeExtra\cr
 }
@@ -38,6 +38,7 @@ of the entities are the row names. Compatibility of the resulting data.fram can 
 \code{hclust_clmem} - wrapper for the \code{hclust} function of package cluster\cr
 \code{kmeans_clmem} - wrapper for the \code{kmeans} function of package cluster\cr
 \code{pam_clmem} - wrapper for the \code{pam} function of package cluster\cr
+\code{apcluster_clmem} - wrapper for the \code{apclusterK} function of package apcluster\cr
 }
 %analysis curves
 \section{Functions to calculate AUC related metrics}{
@@ -49,6 +50,7 @@ of the entities are the row names. Compatibility of the resulting data.fram can 
 %checking and class definition
 \section{Functions to check data and object validity}{
 \code{data_check} - check that the provided \code{data.frame} is formatted correctly\cr
+\code{expSetProcess} - extracts the data set from an object of class expressionSet\cr  
 \code{validConsMatrixObject} - check the validity of a \code{consmatrix} object\cr
 \code{validMergeMatrixObject} - check the validity of a \code{mergematrix} object\cr
 \code{validMemRobListObject} - check the validity of a membership robustness list object\cr
@@ -61,11 +63,12 @@ of the entities are the row names. Compatibility of the resulting data.fram can 
 \section{Functions to plot out performance curves}{
 \code{aucplot} - plot area under the curve (AUC) plots from consensus clustering results\cr
 \code{dkplot} - plot change in AUC by cluster number (delta-K plot)\cr
+\code{expressionPlot} - plot the original data partitioned by cluster membership\cr
+\code{membBoxPlot} - plot a box and whisker plot of the membership robustness for each cluster\cr
 }
 
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted)\cr
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.\cr
 
 Consensus clustering: A resampling-based method for class discovery and visualization of gene expression microarray data. Monti, S., Tamayo, P., Mesirov, J. and Golub, T. Machine Learning, 52, July 2003.\cr
 }
@@ -80,7 +83,7 @@ cluster
 }
 
 \section{See Also}{
-\code{\link{cluster}},\code{\link{lattice}}
+\code{\link{cluster}},\code{\link{lattice}},\code{\link{apcluster}}
 }
 
 \section{Examples}{
@@ -115,4 +118,10 @@ dks <- deltak(acs);
 
 #plot the delta-K curves
 dkplot(dks);
+
+#plot the expression profiles
+expressionPlot(sim_profile,cmr$e1_agnes_k3);
+
+#plot the bwplot of membership robustness for the same
+membBoxPlot(memrob(cmr$e1_agnes_k3));
 }

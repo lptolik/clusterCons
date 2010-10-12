@@ -24,8 +24,7 @@ testcmr : list of consensus and merge matrix results from a \code{\link{cluscomp
 }
 
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted).
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.
 
 Molecular classification of cancer: class discovery and class prediction by gene expression monitoring. Golub, TR and Slonim, DK and Tamayo, P and Huard, C and Gaasenbeek, M and Mesirov, JP and Coller, H and Loh, ML and Downing, JR and Caligiuri, MA and Bloomfield, CD and Lander, ES. Science 1999, 286:531-537
 }

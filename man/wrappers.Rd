@@ -5,6 +5,7 @@
 \alias{hclust_clmem}
 \alias{diana_clmem}
 \alias{kmeans_clmem}
+\alias{apcluster_clmem}
 \title{
 Functions to wrap command calls to clustering functions
 }
@@ -24,6 +25,7 @@ pam_clmem(x, clnum, params = list())
 hclust_clmem(x, clnum, params = list())
 diana_clmem(x, clnum, params = list())
 kmeans_clmem(x, clnum, params = list())
+apcluster_clmem(x,clnum,params = list())
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -52,8 +54,8 @@ Returns a data.frame with row.names matching that of the data.
 	} 
 }
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted).}
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.
+}
 
 \author{
 Dr. T. Ian Simpson
@@ -61,7 +63,7 @@ Dr. T. Ian Simpson
 }
 
 \seealso{
-\code{\link{cluster}}, \code{\link{agnes}}, \code{\link{pam}}, \code{\link{hclust}}, \code{\link{diana}} and \code{\link{kmeans}}.
+\code{\link{cluster}}, \code{\link{agnes}}, \code{\link{pam}}, \code{\link{hclust}}, \code{\link{diana}}, \code{\link{kmeans}} and \code{\link{apclusterK}}
 }
 \examples{
 #load some data

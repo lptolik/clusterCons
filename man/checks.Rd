@@ -39,8 +39,8 @@ returns \code{TRUE} if check is passed or an error message if it is not
 }
 
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted).}
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.
+}
 
 \author{
 Dr. T. Ian Simpson

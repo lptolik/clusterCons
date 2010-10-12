@@ -66,8 +66,7 @@ a list of objects of class \code{\link{consmatrix}} and (if merge specified) \co
 }
 
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted)\cr
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.\cr
 
 Consensus clustering: A resampling-based method for class discovery and visualization of gene expression microarray data. Monti, S., Tamayo, P., Mesirov, J. and Golub, T. Machine Learning, 52, July 2003.\cr
 }
@@ -86,14 +85,14 @@ data(sim_profile);
 
 #perform a group of re-sampling clustering experiments accepting default parameters 
 #for the clustering algorithms
-cmr <- cluscomp(sim_profile,algorithms=list('kmeans','pam'),merge=1,clmin=2,clmax=5,reps=5)
+#cmr <- cluscomp(sim_profile,algorithms=list('kmeans','pam'),merge=1,clmin=2,clmax=5,reps=5)
 
 #simple example
-cmr <- cluscomp(sim_profile,clmin=2,clmax=5,prop=0.8,reps=5)
+#cmr <- cluscomp(sim_profile,clmin=2,clmax=5,prop=0.8,reps=5)
 
 #more complex example
 alp <- list(method='complete')
-cmr <- cluscomp(sim_profile,algorithms=list('agnes','pam'),alparams=list(alp,list()),clmin=4,clmax=4,prop=0.8,reps=5)
+#cmr <- cluscomp(sim_profile,algorithms=list('agnes','pam'),alparams=list(alp,list()),clmin=4,clmax=4,prop=0.8,reps=5)
 
 #even more complex example
 pamp <- list(metric='manhattan')
@@ -107,17 +106,17 @@ clrob(cmr$e2_pam_k4);
 
 #plot a heatmap of the consensus matrix, note you access the cluster matrix object 
 #through the cm slot
-heatmap(cmr$e2_pam_k4@cm);
+#heatmap(cmr$e2_pam_k4@cm);
 
 #display the membership robustness for kmeans k=4 cluster 1
 memrob(cmr$e2_pam_k4)$cluster1;
 
 #merged consensus example
-data(testcmr);
+#data(testcmr);
 
 #calculate the membership robustness for the merge matrix when cluster number k=4, in reference to the pam scaffold. (see memrob for more details). 
-mr <- memrob(testcmr$merge_k4,testcmr$e1_kmeans_k4@rm);
+#mr <- memrob(testcmr$merge_k4,testcmr$e1_kmeans_k4@rm);
 
 #show the membership robustness for cluster 1
-mr$cluster1;
+#mr$cluster1;
 }

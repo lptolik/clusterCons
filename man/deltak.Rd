@@ -31,8 +31,8 @@ deltak(x)
 }
 
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted).}
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.
+}
 
 \author{
 Dr. T. Ian Simpson
@@ -46,11 +46,9 @@ Also see the \code{\link{aucs}} function.
 #load a test cluscomp result set
 data(testcmr)
 
-#reduce size for the example
-testcmr <- testcmr[1:12];
-
-#calculate the AUCs
-acs <- aucs(testcmr);
+#calculate all of the AUC values from the \code{cluscomp} result for algorithm 'kmeans'
+kmeanscmr <- testcmr[grep('kmeans',names(testcmr))];
+acs <- aucs(kmeanscmr);
 
 #calculate the delta-K values
 dks <- deltak(acs);

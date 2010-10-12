@@ -11,6 +11,7 @@ diana_clmem - wrapper for the diana function of package cluster
 hclust_clmem - wrapper for the hclust function of package cluster
 kmeans_clmem - wrapper for the kmeans function of package cluster
 pam_clmem - wrapper for the pam function of package cluster
+apcluster_clmem - wrapper for the apclusterK function of package apcluster
 
 Analysis curves - Functions to calculate AUC related metrics
 
@@ -23,11 +24,13 @@ Plotting - plotting methods
  
 aucplot - plot the areas under the curves from an AUC object (typically produced by the aucs() function)
 dkplot - plot the delta-K curve to estimate the optimal cluster number (k) from a dk object (typically produced by the deltak() function)
-
+expressionPlot - plot the original data partitioned by cluster membership
+membBoxPlot - plot a box and whisker plot of the membership robustness for each cluster
 
 Data checking and class definition - Functions to check data and object validity
 
 data_check - check that the provided data.frame is formatted correctly
+expSetProcess - extracts the data set from an object of class expressionSet  
 validConsMatrixObject - check the validity of a consmatrix object
 validMergeMatrixObject - check the validity of a mergematrix object
 validMemRobListObject - check the validity of a membership robustness list object

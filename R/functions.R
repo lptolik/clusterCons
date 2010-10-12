@@ -4,12 +4,12 @@
 # Author: Dr. T. Ian Simpson
 # Affiliation : University of Edinburgh
 # E-mail : ian.simpson@ed.ac.uk
-# Version : 0.6
+# Version : 1.0
 #
 ###############################################################################
 
 #read in required libraries
-library(cluster)
+library(lattice);
 
 #check data integrity
 data_check<-function(x){
@@ -23,7 +23,42 @@ data_check<-function(x){
 	if(!is.numeric(x[,1])){stop('x is not numeric')}
 	#check for missing values
 	if(sum(is.na(x))!=0){stop('x contains missing values')}
+	#check that there are at least two columns and two rows
+	if(sum(dim(x)>=2)!=2){stop('the data matrix is not at least 2x2, clustering is pointless')}
 	return(TRUE);
+}
+
+#extract the data.frame from the ExpressionSet so that it can be used by cluscomp
+expSetProcess<-function(x){
+	#check that x is an ExpressionSet object, just a catchall in case of direct use
+	if(class(x)=='ExpressionSet'){
+		#extract the expression data from the ExpressionSet object
+		x_data <- x@assayData$exprs;
+		#check the rows and columns are uniquely identified
+		#check that each of the rownames is unique
+		if(
+				length(unique(rownames(x_data))) == length(rownames(x_data))
+				&&
+				#check that each of the colnames is unique
+				length(unique(colnames(x_data))) == length(colnames(x_data))
+				){
+			#now call the data_check
+			x_data <- data.frame(x_data);
+			#check the names etc in the conversion here
+			if(data_check(x_data)==TRUE){
+				return(x_data);
+			}
+			else{
+				stop('The expression set has failed the data check, cannot proceed');
+			}
+		}
+		else{
+			stop('row and column names are not unique, cannot process');
+		}
+	}
+	else{
+		stop('The data object is not an ExpressionSet');
+	}
 }
 
 #Basic S4 class to carry the consensus matrices and their full clustering result
@@ -81,6 +116,8 @@ setValidity("dk",validDkObject)
 #perform the re-sampling
 cluscomp<-function(x,diss=FALSE,algorithms=list('kmeans'),alparams=list(),alweights=list(),clmin=2,clmax=10,prop=0.8,reps=50,merge=0){
 	#CHECK INPUTS
+	#first check if the input data is an ExpressionSet if so extract the data
+	if(class(x)=='ExpressionSet'){x <- expSetProcess(x);};
 	#check integrity of data (what about NAs)
 	if(data_check(x)!=TRUE){stop('the provided data fails the data integrity check')}
 	#check that the algorithms are passed as a list
@@ -341,6 +378,8 @@ memrob <- function(x,rm=data.frame()){
 		mem_rob_list[paste('cluster',i,sep='')] <- current_mem_rob_list
 	}
 	mem_rob_list['resultmatrix']<- new('memrobmatrix',mrm=mem_rob);
+	mem_rob_list['algo']<- x@a;
+	mem_rob_list['type']<- class(x);
 	return(mem_rob_list)
 }
 ##example
@@ -548,4 +587,104 @@ dkplot<-function(x){
 		
 		draw.key(vp=viewport(0.8,0.2),legend,draw=TRUE);
 	}
+}
+
+#plot to show the data (in this case we are talking about expression data but it would work with any) categorised by cluster
+#note that the input is the data.frame or ExpressionSet that was passed to cluscomp and the cluster membership list by which to segregate
+expressionPlot <- function(x,cm){
+	
+	#check if the data is an expression set, if it is then process
+	if(class(x)=='ExpressionSet'){x<-expSetProcess(x)};
+	
+	#check if they are trying to pass a merge matrix (meaningless as it requires a reference matrix from a clustering result)
+	if(class(cm)=='mergematrix'){stop('cannot pass a merge matrix, we require a clustering structure to partition the data for profile plotting')};
+	
+	#check the data again
+	#check integrity of data (what about NAs)
+	if(data_check(x)!=TRUE){stop('the provided data fails the data integrity check')};
+	
+	#reshape the data using second dimension as conditions
+	x_plot <- reshape(x,varying=1:dim(x)[[2]],dir='long',v.names='expression',timevar='condition');
+	
+	#convert to factors
+	x_plot$condition <- as.factor(x_plot$condition);
+	x_plot$id <- as.factor(x_plot$id);
+	
+	#add class (cluster identifier)
+	x_plot$class <- factor(cm@rm$cm,labels='profile');
+	
+	cols <- brewer.pal(9,'Greys');
+	p <- function(..., col) {
+		panel.xyplot(..., type = "p", col = cols)
+		panel.xyplot(..., type = "a", col = 'black')
+	}
+	x11();
+	xyplot(
+			expression~condition|class,
+			x_plot,
+			panel = p,
+			par.settings=list(strip.background=list(col='white'))
+	);
+}
+
+#plot to show the membership robustness data as a box plot per cluster
+#note that the input is the result of a call to memrob()
+#for example : membBoxPlot(mr) or directly membBoxPlot(memrob(cmr$e1_kmeans_k4))
+membBoxPlot<-function(x){
+	#need to check that this is a membership robustness list first ! may need to create this class or rather a new class to cover the memrob return object !!
+	if(class(x)!='list'){stop('you must pass a membership robustness list to this function')};
+	#setting up the trellis object for B&W
+	my_theme <- trellis.par.get();
+	#set the main plot to darkgrey
+	my_theme$box.rectangle$col<-'darkgrey';
+	my_theme$box.umbrella$col<-'darkgrey';
+	my_theme$dot.line$col<-'darkgrey';
+	my_theme$dot$col<-'darkgrey';
+	my_theme$box.dot$col<-'darkgrey';
+	my_theme$box.dot$pch<-1;
+	#set the outliers to black open triangles
+	my_theme$plot.symbol$pch<-2;
+	my_theme$plot.symbol$col<-'black';
+	trellis.par.set(my_theme);
+	
+	#now set up the object for plotting
+	final <- data.frame();
+	
+	for(i in 1:(length(x)-3)){
+		current <- x[[i]]@mrl;
+		current$algo <- x$algo; #add the algorithm name
+		if(x$type=='consmatrix'){
+			current$cons <- 'consensus';		
+		}
+		else{
+			current$cons <- 'merge';
+		}
+		current$cluster <- i; # add the cluster number (how does this work for the merge ?)
+		#now add the data to the final data plot object
+		if(length(final)!=0){
+			final <- rbind(final,current);
+		}
+		else{
+			final <- current;
+		}
+	}
+	
+	final$cluster <- as.factor(final$cluster);
+	final$cons <- as.factor(final$cons);
+	final$algo <- as.factor(final$algo)
+	
+	bwplot(mem_rob~cluster|cons*algo,
+			final,
+			as.table=TRUE,
+			lattice.options = 	list(
+					layout.heights = list(
+							strip = list(x=1.5)
+					)
+			),
+			par.settings = list(
+					strip.background = list(col = c('white'))
+			),
+			ylab='membership robustness',
+			xlab='cluster'
+	)
 }

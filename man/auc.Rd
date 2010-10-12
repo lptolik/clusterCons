@@ -35,8 +35,8 @@ aucs(x)
 	}
 }
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted).}
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.
+}
 
 \author{
 Dr. T. Ian Simpson
@@ -53,12 +53,10 @@ data('testcmr');
 #look at the result structure
 summary(testcmr);
 
-#reduce size for the example
-testcmr <- testcmr[1:12];
-
 #calculate an individual AUC value for a consensus matrix
 ac <- auc(testcmr$e1_kmeans_k2@cm);
 
-#calculate all of the AUC values from the \code{cluscomp} result
-acs <- aucs(testcmr);
+#calculate all of the AUC values from the \code{cluscomp} result for algorithm 'kmeans'
+kmeanscmr <- testcmr[grep('kmeans',names(testcmr))];
+acs <- aucs(kmeanscmr);
 }

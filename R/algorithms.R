@@ -4,7 +4,7 @@
 # Author: Dr. T. Ian Simpson
 # Affiliation : University of Edinburgh
 # E-mail : ian.simpson@ed.ac.uk
-# Version : 0.6
+# Version : 1.0
 ###############################################################################
 #The following clustering algorithms from cluster are specified here :-
 #		agnes  - agglomerative hierarchical clustering
@@ -12,7 +12,13 @@
 #		kmeans - k-means clustering
 #		hclust - hierarchical cluster analysis on a set of dissimilarities
 #		diana  - divisive hierarchical clustering
+#		apcluster - affinity propagation clustering
 ###############################################################################
+#load the cluster package
+library(cluster);
+#load the apcluster package
+library(apcluster);
+
 #agnes
 agnes_clmem <- function(x,clnum,params=list()){
 	#assign the parameters to the data.frame
@@ -150,6 +156,57 @@ diana_clmem <- function(x,clnum,params=list()){
 #diana_clmem(cluster_example_data2,clnum=4)
 #2. with change of distance algorithm
 #diana_clmem(cluster_example_data2,clnum=6,params=list(metric='manhattan'))
+
+#apcluster
+#clustering using the affinity propagation method of Frey and Dueck Science (2007)
+#using the apclusterK method from the apcluster package that allows you to specify the desired cluster number
+apcluster_clmem <- function(x,clnum,params=list()){
+	#convert the data.frame to a matrix
+	x <- as.matrix(x);
+	#the diss flag is unecessary so remove
+	params$diss <- NULL;
+	#note that apcluster requires a square matrix entry, in reality this means a similarity matrix
+	#have to assume the user knows how to use the method so just check that the input is a square matrix
+	if(class(x)=='matrix' && dim(x)[1] == dim(x)[2]){
+		#ensure that the process returns the desired number of clusters
+		params$prc=0;
+		#add the data to the params
+		params$s <- x;
+		#specify the cluster number
+		params$K <- clnum;
+		#perform the clustering
+		apc <- (do.call(apclusterK,params));
+		#grab the membership objects from the cluster list
+		cl_list <- apc@clusters;
+		#reconfigure the output to a standard cluster membership list
+		for(i in 1:length(cl_list)){
+			current <- names(cl_list[[i]]);
+			for(j in 1:length(current)){
+				if(i==1 && j==1){
+					clmem <- data.frame(i);
+					names(clmem) <- c('cm');
+					rownames(clmem)<-current[j];
+				}
+				else{
+					#add the next row
+					add<- data.frame(i);
+					names(add) <- c('cm');
+					rownames(add) <- current[j];
+					clmem <- rbind(clmem,add);
+				}
+			}
+		}
+		return(clmem);
+	}
+	else{
+		stop('apcluster requires a square numeric matrix for clustering, this is supposed to be a similarity matrix');
+	}
+}
+#examples
+#1. simple
+#apcluster_clmem(data,clnum=4);
+#2. increasing the number of bisection steps to perfrom
+#apcluster_clmem(data,clnum=4,params=list(bimaxit=100));
 
 #OPTIONAL ADDITIONAL FUNCTIONS (uncomment for use)
 

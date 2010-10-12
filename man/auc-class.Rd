@@ -12,8 +12,8 @@ Objects can be created by calls of the form \code{new("auc", ...)}, although the
 }
 
 \references{
-Merged consensus clustering to assess and improve classification of microarray data. Simpson, T.I., Armstrong, J.D. and Jarman A.P.
-(submitted).}
+Merged consensus clustering to assess and improve class discovery with microarray data. Simpson TI, Armstrong JD and Jarman AP. BMC Bioinformatics 2010, 11:590.
+}
 
 \author{
 Dr. T. Ian Simpson
