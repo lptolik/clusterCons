@@ -372,7 +372,7 @@ memrob <- function(x,rm=data.frame()){
 	mem_rob_list <- list();
 	for(i in 1:dim(mem_rob)[2]){
 		cl_mem_rob <- (mem_rob[(cmref==i),i])
-		current_list <- data.frame(sort(cl_mem_rob,dec=TRUE))
+		current_list <- data.frame(sort(cl_mem_rob,decreasing=TRUE))
 		names(current_list) <- 'mem_rob'
 		current_mem_rob_list <- new('memroblist',mrl=current_list);
 		mem_rob_list[paste('cluster',i,sep='')] <- current_mem_rob_list
@@ -396,52 +396,38 @@ memrob <- function(x,rm=data.frame()){
 #cluster1 <- mr$cluster1@mrl
 
 #AUC - calculate the area under the curve
+#Modified by AS for higher performance
 auc <- function(x){
-	n = dim(x)[1]
-	
-	m = n*(n-1)/2
-	
-	xi <- matrix(0,m,1)
-	
-	k=1
-	
-	for (i in 1:n){
-		for(j in 1:n){
-			if(i < j){
-				xi[k] <- x[i,j]
-				k=k+1
-			}
-		}
-	}
-	
-	#sort the xi 
-	xi <- sort(xi,dec=FALSE)
-	
-	
-	#now create the CDF(xi)
-	cdfxi = matrix(0,m,1);
-	
-	for(i in 1:m){
-		#not counting not summing (we are summing the T/F i.e. 1/0)
-		cdfxi[i] = sum(xi<=xi[i])/m
-	}
-	
-	#now create the xi-x(i-1) column
-	xidiff = matrix(0,(m-1),1)
-	
-	for(i in 2:m){
-		xidiff[i-1] = xi[i] - xi[i-1]
-	}
-	
-	#now put together from 2:l
-	test <- data.frame(cbind(xi[2:m],cdfxi[2:m],xidiff))
-	# 
-	names(test)<- c('xi','cdfxi','xidiff')
-	# 
-	test$auc <- test$cdfxi*xidiff
-	
-	auc <- sum(test$auc)
-	return(auc)
+  n = dim(x)[1]
+  m = n * (n - 1)/2
+  xi <- matrix(0, m, 1)
+  xi<-x[upper.tri(x)]
+  # k = 1
+  # for (i in 1:n) {
+  #   for (j in 1:n) {
+  #     if (i < j) {
+  #       xi[k] <- x[i, j]
+  #       k = k + 1
+  #     }
+  #   }
+  # }
+  xi <- sort(xi, decreasing = FALSE)
+  cdf = ecdf(xi)
+  cdfxi = cdf(xi)
+  # cdfxi = matrix(0, m, 1)
+  # for (i in 1:m) {
+  #   cdfxi[i] = sum(xi <= xi[i])/m
+  # }
+  xidiff <- diff(xi)
+#  xidiff = matrix(0, (m - 1), 1)
+#  for (i in 2:m) {
+#    xidiff[i - 1] = xi[i] - xi[i - 1]
+#  }
+  test <- data.frame(cbind(xi[2:m], cdfxi[2:m], xidiff))
+  names(test) <- c("xi", "cdfxi", "xidiff")
+  test$auc <- test$cdfxi * xidiff
+  auc <- sum(test$auc)
+  return(auc)
 }
 
 #calculate the area under the curves from a consensus clustering result object
@@ -495,7 +481,7 @@ deltak <- function(x){
 #aucs plot
 aucplot<-function(x){
 	if(validAUCObject(x)){
-		library(RColorBrewer);
+#		library(RColorBrewer);
 		line_number <- length(unique(x[,2]));
 		if(line_number<3){
 			gpcols <- brewer.pal(3,'Set1');
@@ -604,7 +590,7 @@ expressionPlot <- function(x,cm){
 	if(data_check(x)!=TRUE){stop('the provided data fails the data integrity check')};
 	
 	#reshape the data using second dimension as conditions
-	x_plot <- reshape(x,varying=1:dim(x)[[2]],dir='long',v.names='expression',timevar='condition');
+	x_plot <- reshape(x,varying=1:dim(x)[[2]],direction='long',v.names='expression',timevar='condition');
 	
 	#convert to factors
 	x_plot$condition <- as.factor(x_plot$condition);
@@ -618,7 +604,6 @@ expressionPlot <- function(x,cm){
 		panel.xyplot(..., type = "p", col = cols)
 		panel.xyplot(..., type = "a", col = 'black')
 	}
-	x11();
 	xyplot(
 			expression~condition|class,
 			x_plot,
@@ -652,27 +637,29 @@ membBoxPlot<-function(x){
 	
 	for(i in 1:(length(x)-3)){
 		current <- x[[i]]@mrl;
-		current$algo <- x$algo; #add the algorithm name
-		if(x$type=='consmatrix'){
-			current$cons <- 'consensus';		
-		}
-		else{
-			current$cons <- 'merge';
-		}
-		current$cluster <- i; # add the cluster number (how does this work for the merge ?)
+		if(dim(current)[1]>0){
+			current$algo <- x$algo; #add the algorithm name
+			if(x$type=='consmatrix'){
+				current$cons <- 'consensus';		
+			}
+			else{
+				current$cons <- 'merge';
+			}
+			current$cluster <- i; # add the cluster number (how does this work for the merge ?)
 		#now add the data to the final data plot object
-		if(length(final)!=0){
-			final <- rbind(final,current);
-		}
-		else{
-			final <- current;
+			if(length(final)!=0){
+				final <- rbind(final,current);
+			}
+			else{
+				final <- current;
+			}
 		}
 	}
 	
-	final$cluster <- as.factor(final$cluster);
-	final$cons <- as.factor(final$cons);
-	final$algo <- as.factor(final$algo)
-	
+	final$cluster 	<- as.factor(final$cluster);
+	final$cons 		<- as.factor(final$cons);
+	final$algo 		<- as.factor(final$algo)
+	final$k			<- length(x)-3
 	bwplot(mem_rob~cluster|cons*algo,
 			final,
 			as.table=TRUE,
@@ -687,4 +674,5 @@ membBoxPlot<-function(x){
 			ylab='membership robustness',
 			xlab='cluster'
 	)
+	invisible(final)
 }

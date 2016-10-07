@@ -28,7 +28,11 @@ agnes_clmem <- function(x,clnum,params=list()){
 	#grab the membership object
 	clmem <- data.frame(cutree(hc,clnum))
 	#move the row.names across
-	row.names(clmem) <- row.names(x)
+	if(class(x)!='dist'){
+		row.names(clmem) <- row.names(x)
+	}else{
+		row.names(clmem) <- row.names(as.matrix(x))
+	}
 	#tidy the column header
 	names(clmem) <-c('cm')
 	#return the membership object
